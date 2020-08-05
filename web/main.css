@@ -1,0 +1,30 @@
+#menu {
+    position: fixed;
+    display: block;
+    width:50%;
+    height:80%;
+    top:10%;
+    left:25%;
+    border: black 1px solid;
+    z-index: 400;
+    background: wheat;
+    cursor: pointer;
+	
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+#menu-title {
+}
+
+#menu-buttons {
+}
+
+#menu-queue {
+    display:none;
+}
+
+button {
+
+}
