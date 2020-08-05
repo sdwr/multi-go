@@ -42,9 +42,8 @@ type Client struct {
 }
 
 type Message struct {
-    Sender *Client
-    Reciever *Client
-    ID int
+    Sender int
+    Reciever int
     Type string
     Payload Payload
 }
@@ -198,7 +197,7 @@ func (c *Client) readPump() {
         }
         var decodedMessage Message
         json.Unmarshal(message, &decodedMessage)
-        decodedMessage.Sender = c
+        decodedMessage.Sender = c.ID
         c.room.incoming <- &decodedMessage
     }
 }

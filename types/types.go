@@ -13,6 +13,13 @@ type Player struct {
     Cooldown int
 }
 
+type Message struct {
+    Sender int
+    Reciever int
+    Type string
+    Payload Payload
+}
+
 type Payload struct {
     Move Move
 }
