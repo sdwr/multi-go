@@ -6,23 +6,23 @@ type State struct {
     Players map[int]Player
 }
 
-type Move struct {
-    Coords Position
-    Player Player
-}
-
 type Player struct {
     ID int
     Name string
     Color string
-}
-
-type Position struct {
-    X int
-    Y int
+    Cooldown int
 }
 
 type Payload struct {
     Move Move
 }
 
+type Move struct {
+    Coords Position
+    Player Player
+}
+
+type Position struct {
+    X int
+    Y int
+}

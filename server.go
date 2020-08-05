@@ -9,11 +9,10 @@ import (
     "github.com/gorilla/mux"
 
     "github.com/sdwr/multi-go/socket"
-    . "github.com/sdwr/multi-go/types"
 )
 
 var router *mux.Router
-
+var room *socket.Room
 func initGlobals() {
 
 }
@@ -26,7 +25,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func socketHandler(w http.ResponseWriter, r *http.Request) {
-    socket.ServeWs(room, w, r)
+    socket.ServeWs(socket.GlobalRoom, w, r)
 }
 
 func initRouter() {
@@ -47,6 +46,7 @@ func startServer() {
 
 func main() {
     initGlobals()
+    socket.InitRooms()
     initRouter()
     addRoutes()
     startServer()

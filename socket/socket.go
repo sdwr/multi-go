@@ -21,6 +21,7 @@ type Room struct {
     register chan *Client
     unregister chan *Client
     incoming chan *Message
+    outgoing chan *Message
 
     registerCallback func(*Client)
     unregisterCallback func(*Client)
@@ -83,6 +84,7 @@ func NewRoom() *Room {
                         register:make(chan *Client),
                         unregister:make(chan *Client),
                         incoming:make(chan *Message, 20),
+                        outgoing:make(chan *Message, 20),
                         registerCallback:clientCallback,
 			unregisterCallback:clientCallback,
 			incomingCallback:messageCallback,
@@ -107,10 +109,18 @@ func (r *Room) SetIncomingCallback(cb func(*Message)) {
 }
 
 func (r *Room) BroadcastMessage(m *Message) {
+    r.outgoing <- m
+}
+
+func (r *Room) FakeIncomingMessage(m *Message) {
+    r.incoming <- m
+}
+
+func (r *Room) sendOutgoing(m *Message) {
     encodedMessage, err := json.Marshal(m)
     if(err != nil) {
         log.Println(err)
-        return
+    return
     }
     if(m.Reciever != nil) {
         m.Reciever.send <- encodedMessage
@@ -119,18 +129,12 @@ func (r *Room) BroadcastMessage(m *Message) {
     }
 }
 
-func (r *Room) FakeIncomingMessage(m *Message) {
-    r.incoming <- m
-}
-
-
 func (r *Room) sendAll(encodedMessage []byte) {
     clients := r.Clients
     for c, _ := range clients {
         select {
         case c.send <- encodedMessage:
         default:
-                    close(c.send)
                     delete(r.Clients, c)
         }
     }
@@ -140,17 +144,32 @@ func (r *Room) Run() {
     for {
         select {
         case client := <-r.register:
-                r.Clients[client] = true
-                r.registerCallback(client)
+                r.registerClient(client)
         case client := <-r.unregister:
                 if _, ok := r.Clients[client]; ok {
-                        delete(r.Clients, client)
-                        close(client.send)
-                        r.unregisterCallback(client)
+                    r.unregisterClient(client)
                 }
         case message := <-r.incoming:
-		r.incomingCallback(message)
+    		r.incomingCallback(message)
+        case message := <-r.outgoing:
+            r.sendOutgoing(message)
         }
+    }
+}
+
+func (r *Room) registerClient(c *Client) {
+    r.Clients[c] = true
+    r.registerCallback(c)
+}
+
+func (r *Room) unregisterClient(c *Client) {
+    delete(r.Clients, c)
+    r.unregisterCallback(c)
+}
+
+func (r *Room) UnregisterAll() {
+    for c, _ := range r.Clients {
+        r.unregisterClient(c)
     }
 }
 
@@ -208,6 +227,12 @@ func (c *Client) writePump() {
             }
         }
     }
+}
+
+func (c *Client) ChangeRoom(r *Room) {
+    c.room.unregister <- c
+    c.room = r
+    r.register <- c
 }
 
 func ServeWs(room *Room, w http.ResponseWriter, r *http.Request) {
