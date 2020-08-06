@@ -41,13 +41,6 @@ type Client struct {
     ID int
 }
 
-type Message struct {
-    Sender int
-    Reciever int
-    Type string
-    Payload Payload
-}
-
 var pingTimer int
 var pongDeadline int
 
@@ -197,7 +190,7 @@ func (c *Client) readPump() {
         }
         var decodedMessage Message
         json.Unmarshal(message, &decodedMessage)
-        decodedMessage.Sender = c.ID
+        decodedMessage.Sender = c
         c.room.incoming <- &decodedMessage
     }
 }

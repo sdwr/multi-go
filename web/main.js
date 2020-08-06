@@ -13,10 +13,8 @@ socket.onopen = function(e) {
 
 socket.onmessage = function(e) {
 	let message = JSON.parse(e.data);
-	if(message.Type === "ADDSTONE") {
-		addStone(message.X,message.Y,message.Player)
-	} else if(message.Type === "REMOVESTONE") {
-		removeStone(message.X, message.Y)
+	if(message.Type === "UPDATE") {
+		updateStones(message.Payload)
 	} else if(message.Type === "FOUNDMATCH") {
 		closeMenu()
 	}
@@ -109,8 +107,15 @@ let board = new WGo.Board(boardElement, {width:600})
 
 //BOARD API LETS GOOOO
 let players = ["#bbbbbb", "#abcabc", "#defdef"]
-function addStone(x, y, player){
-	board.addObject({x:x,y:y,type:drawFactory(players[player])})
+
+function updateStones(payload) {
+	addStone(payload.Move.Coords.X, payload.Move.Coords.Y, payload.Move.Player.Color)
+	payload.Remove.forEach(pos => {
+		removeStone(pos.X,pos.Y)
+	})
+}
+function addStone(x, y, color){
+	board.addObject({x:x,y:y,type:drawFactory(color)})
 }
 
 function removeStone(x, y){

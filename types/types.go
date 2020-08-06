@@ -22,6 +22,7 @@ type Message struct {
 
 type Payload struct {
     Move Move
+    Remove []Position
 }
 
 type Move struct {
