@@ -5,14 +5,27 @@ import (
 )
 
 var game Game
-func InitGame(boardSize int) {
-        game := Game{
+func NewGame(boardSize int, r *Room) *Game {
+        return &Game{
                 Size:boardSize,
                 Board:initBoard(boardSize),
-                Players: make(map[int]Player),
-    		IncomingMessages: make(chan *Message, 10)
-		OutoingMessages: make(chan *Message, 10)
+		Players: initPlayers(r.Clients),
+    		IncomingMessages: r.Incoming,
+		OutoingMessages: r.Outgoing,
 	}
+}
+
+func NewPlayer(id int) *Player {
+    return &Player{
+	ID: id,
+	Name: "",
+	Color: randomColor(),
+	Cooldown: 10000
+    }
+}
+
+func randomColor() {
+    return "#abcabc"
 }
 
 func initBoard(size) Board {
@@ -21,6 +34,14 @@ func initBoard(size) Board {
         board[i] = make([]int, size)
     }
     return board
+}
+
+func initPlayers(clients map[*Client]bool) map[int]*Player {
+    players := make(map[int]*Player)
+    for c, _ := range clients {
+	players[c.ID] = NewPlayer(c.ID)
+    }
+    return players
 }
 
 func removePieces(s []Position) {
@@ -168,9 +189,23 @@ func addPiece(move Move) {
 
 }
 
+func sendInitMessage() {
+    for _, p := game.Players {
+        game.Outgoing <- createInitMessage(p)
+    }
+}
+
+func createInitMessage(p *Player) *Message {
+        return &Message{
+                Reciever:p.ID,
+                Type:"GAMESTART"
+                Payload:Payload{Player:*p}
+        }
+}
+
 func processMessage(m *Message) {
-        move := m.Payload.Move
-        player := move.Player
+    move := m.Payload.Move
+    player := &move.Player
 	if game.Players[player.ID] == nil {
 	    game.Players[player.ID] = player
 	}
@@ -178,9 +213,10 @@ func processMessage(m *Message) {
 }
 
 func Run() {
-   for {
-	message, _ := <-incomingMessages:
+    sendInitMessage()
+    for {
+	    message, _ := <-incomingMessages:
 	processMessage(message)
 	}
-   }
 }
+

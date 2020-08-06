@@ -20,8 +20,8 @@ type Room struct {
 
     register chan *Client
     unregister chan *Client
-    incoming chan *Message
-    outgoing chan *Message
+    Incoming chan *Message
+    Outgoing chan *Message
 
     registerCallback func(*Client)
     unregisterCallback func(*Client)
@@ -84,8 +84,8 @@ func NewRoom() *Room {
                         Clients:make(map[*Client]bool),
                         register:make(chan *Client),
                         unregister:make(chan *Client),
-                        incoming:make(chan *Message, 20),
-                        outgoing:make(chan *Message, 20),
+                        Incoming:make(chan *Message, 20),
+                        Outgoing:make(chan *Message, 20),
                         registerCallback:clientCallback,
 			unregisterCallback:clientCallback,
 			incomingCallback:messageCallback,
@@ -110,11 +110,11 @@ func (r *Room) SetIncomingCallback(cb func(*Message)) {
 }
 
 func (r *Room) BroadcastMessage(m *Message) {
-    r.outgoing <- m
+    r.Outgoing <- m
 }
 
 func (r *Room) FakeIncomingMessage(m *Message) {
-    r.incoming <- m
+    r.Incoming <- m
 }
 
 func (r *Room) sendOutgoing(m *Message) {
@@ -150,13 +150,15 @@ func (r *Room) Run() {
                 if _, ok := r.Clients[client]; ok {
                     r.unregisterClient(client)
                 }
-        case message := <-r.incoming:
+        case message := <-r.Incoming:
     		r.incomingCallback(message)
-        case message := <-r.outgoing:
+        case message := <-r.Outgoing:
             r.sendOutgoing(message)
         }
     }
 }
+
+//Client moving functions
 
 func (r *Room) registerClient(c *Client) {
     r.Clients[c] = true
@@ -171,6 +173,12 @@ func (r *Room) unregisterClient(c *Client) {
 func (r *Room) UnregisterAll() {
     for c, _ := range r.Clients {
         r.unregisterClient(c)
+    }
+}
+
+func (r *Room) MoveClients(newR *Room) {
+    for c, _ := range r.Clients {
+	c.ChangeRoom(newR)
     }
 }
 
@@ -200,7 +208,7 @@ func (c *Client) readPump() {
         var decodedMessage Message
         json.Unmarshal(message, &decodedMessage)
         decodedMessage.Sender = c.ID
-        c.room.incoming <- &decodedMessage
+        c.room.Incoming <- &decodedMessage
     }
 }
 
