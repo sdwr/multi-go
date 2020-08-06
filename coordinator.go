@@ -1,16 +1,18 @@
 package main
 
 import (
+    "log"
+
     "github.com/sdwr/multi-go/socket"
     . "github.com/sdwr/multi-go/types"
 )
 
-var GlobalRoom *Room
-var queueRoom *Room
-var gameRooms map[int]*Room
+var GlobalRoom *socket.Room
+var queueRoom *socket.Room
+var gameRooms map[int]*socket.Room
 var GameHandler chan *Message
 
-func InitCoordinator() *Room {
+func InitCoordinator() *socket.Room {
     initRooms()
     return GlobalRoom
 }	
@@ -22,18 +24,18 @@ func RunCoordinator() {
 func initRooms() {
     GlobalRoom = socket.NewRoom()
     queueRoom = socket.NewRoom()
-    gameRooms = make(map[int]*Room)
+    gameRooms = make(map[int]*socket.Room)
     GameHandler = make(chan *Message, 10)
 }
 
 func run() {
     for {
         select {
-        case m <- GlobalRoom.Incoming:
+	case m := <- GlobalRoom.Incoming:
             handleGlobalMessage(m)
-        case m <- queueRoom.Incoming:
+    case m := <- queueRoom.Incoming:
             handleQueueMessage(m)
-        case m <- GameHandler:
+    case m := <- GameHandler:
             handleGameMessage(m)
         }
     }
@@ -41,7 +43,7 @@ func run() {
 
 func handleGlobalMessage(m *Message) {
     if(m.Type == "QUEUE") {
-        m.Sender.ChangeRoom(queueRoom)
+        GlobalRoom.FindClient(m.Sender).ChangeRoom(queueRoom)
         if len(queueRoom.Clients) >= 8 {
             startGame(queueRoom)
         }
@@ -49,26 +51,26 @@ func handleGlobalMessage(m *Message) {
 }
 
 func handleQueueMessage(m *Message) {
-    Log.Println(m)
+    log.Println(m)
 }
 
 func handleGameMessage(m *Message) {
     if(m.Type == "DONE") {
-        gameRoom := gameRooms[m.Sender.ID]
+        gameRoom := gameRooms[m.Sender]
         gameRoom.MoveClients(GlobalRoom)
-        delete(gameRoom)
+	delete(gameRooms, gameRoom.ID)	    
     }
 }
 
-func startGame(r *Room) {
+func startGame(r *socket.Room) {
    gameRoom := addRoom()
-   moveClients(queueRoom, gameRoom)
-   game := NewGame(gameRoom)
+   queueRoom.MoveClients(gameRoom)
+   game := NewGame(19, gameRoom)
    game.Run()
 }
 
 func addRoom() *socket.Room {
-    room := NewRoom()
+    room := socket.NewRoom()
     gameRooms[room.ID] = room
     return room
 }

@@ -12,11 +12,16 @@ import (
     . "github.com/sdwr/multi-go/types"
 )
 
+//DATA STRUCTURES:
+// Room.Clients is modified on register/unregister
+// all room channels are read in Room.Run()
+
+
 type Room struct {
     ID int
     Name string
     Settings RoomSettings
-    Clients map[*Client]bool
+    Clients map[int]*Client
 
     register chan *Client
     unregister chan *Client
@@ -59,15 +64,6 @@ func GenerateID() int{
     return lastID
 }
 
-func findClient(id int, clients map[*Client]bool) *Client {
-    for c, _ := range clients {
-	if c.ID == id {
-	    return c
-	}
-    }
-    return nil
-}
-
 //**************************************************
 //ROOM FUNCTIONS
 //**************************************************
@@ -81,7 +77,7 @@ func NewRoom() *Room {
 	return &Room{ID:GenerateID(),
                         Name:"",
                         Settings: CreateRoomSettings(),
-                        Clients:make(map[*Client]bool),
+                        Clients:make(map[int]*Client),
                         register:make(chan *Client),
                         unregister:make(chan *Client),
                         Incoming:make(chan *Message, 20),
@@ -124,7 +120,7 @@ func (r *Room) sendOutgoing(m *Message) {
     return
     }
     if(m.Reciever != 0) {
-        findClient(m.Reciever, r.Clients).send <- encodedMessage
+        r.FindClient(m.Reciever).send <- encodedMessage
     } else {
         r.sendAll(encodedMessage)
     }
@@ -132,11 +128,11 @@ func (r *Room) sendOutgoing(m *Message) {
 
 func (r *Room) sendAll(encodedMessage []byte) {
     clients := r.Clients
-    for c, _ := range clients {
+    for _, c := range clients {
         select {
         case c.send <- encodedMessage:
         default:
-                    delete(r.Clients, c)
+                    delete(r.Clients, c.ID)
         }
     }
 }
@@ -147,7 +143,7 @@ func (r *Room) Run() {
         case client := <-r.register:
                 r.registerClient(client)
         case client := <-r.unregister:
-                if _, ok := r.Clients[client]; ok {
+                if _, ok := r.Clients[client.ID]; ok {
                     r.unregisterClient(client)
                 }
         case message := <-r.Incoming:
@@ -158,26 +154,30 @@ func (r *Room) Run() {
     }
 }
 
-//Client moving functions
+//Client helper functions
+func (r *Room) FindClient(id int) *Client {
+    return r.Clients[id]
+}
 
+//Client moving functions
 func (r *Room) registerClient(c *Client) {
-    r.Clients[c] = true
+    r.Clients[c.ID] = c
     r.registerCallback(c)
 }
 
 func (r *Room) unregisterClient(c *Client) {
-    delete(r.Clients, c)
+    delete(r.Clients, c.ID)
     r.unregisterCallback(c)
 }
 
 func (r *Room) UnregisterAll() {
-    for c, _ := range r.Clients {
+    for _, c := range r.Clients {
         r.unregisterClient(c)
     }
 }
 
 func (r *Room) MoveClients(newR *Room) {
-    for c, _ := range r.Clients {
+    for _, c := range r.Clients {
 	c.ChangeRoom(newR)
     }
 }

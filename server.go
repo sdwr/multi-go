@@ -13,7 +13,7 @@ import (
 )
 
 var router *mux.Router
-var globalRoom *Room
+var globalRoom *socket.Room
 func initGlobals() {
 
 }
@@ -26,7 +26,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 //make sure global room is init first
 func socketHandler(w http.ResponseWriter, r *http.Request) {
-    socket.ServeWs(GlobalRoom, w, r)
+    socket.ServeWs(globalRoom, w, r)
 }
 
 func initRouter() {

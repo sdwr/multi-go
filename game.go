@@ -1,17 +1,18 @@
 package main
 
 import (
+    "github.com/sdwr/multi-go/socket"
     . "github.com/sdwr/multi-go/types"
 )
 
-var game Game
-func NewGame(boardSize int, r *Room) *Game {
+
+func NewGame(boardSize int, r *socket.Room) *Game {
         return &Game{
                 Size:boardSize,
                 Board:initBoard(boardSize),
 		Players: initPlayers(r.Clients),
     		IncomingMessages: r.Incoming,
-		OutoingMessages: r.Outgoing,
+		OutgoingMessages: r.Outgoing,
 	}
 }
 
@@ -20,15 +21,15 @@ func NewPlayer(id int) *Player {
 	ID: id,
 	Name: "",
 	Color: randomColor(),
-	Cooldown: 10000
+	Cooldown: 10000,
     }
 }
 
-func randomColor() {
+func randomColor() string {
     return "#abcabc"
 }
 
-func initBoard(size) Board {
+func initBoard(size int) [][]int {
         board := make([][]int, size)
     for i := range board {
         board[i] = make([]int, size)
@@ -36,17 +37,17 @@ func initBoard(size) Board {
     return board
 }
 
-func initPlayers(clients map[*Client]bool) map[int]*Player {
+func initPlayers(clients map[int]*socket.Client) map[int]*Player {
     players := make(map[int]*Player)
-    for c, _ := range clients {
+    for _ , c := range clients {
 	players[c.ID] = NewPlayer(c.ID)
     }
     return players
 }
 
 func removePieces(s []Position) {
-    for _, pos := s {
-        game.Board[s.X][s.Y] = 0
+    for _, pos := range s {
+        game.Board[pos.X][pos.Y] = 0
     }
 }
 
@@ -88,7 +89,7 @@ func (stack *[]Position) pop() Position {
 }
 
 func getSurrounding(pos Position) []Position {
-    surround := [Position{X:1,Y:0},Position{X:-1,Y:0},Position{X:0,Y:1},Position{X:0,Y:-1}
+    surround := [...]Position{Position{X:1,Y:0},Position{X:-1,Y:0},Position{X:0,Y:1},Position{X:0,Y:-1}}
     for i, p := range surround {
         surround[i] = add(p, pos)
     }
@@ -117,7 +118,7 @@ func groupLives(pos Position) bool {
     stack.push(pos)
     groupBoard[hash(pos)]=true
 
-    while len(stack) > 0 {
+    for ;len(stack) > 0; {
         pos = stack.pop()
         square = getSpace(pos)
         select {
@@ -144,7 +145,7 @@ func findGroup(pos Position) []Position {
     stack.push(pos)
     groupBoard[hash(pos)]=true
 
-    while len(stack) > 0 {
+    for ;len(stack) > 0; {
         pos = stack.pop()
         square = getSpace(pos)
         select {
@@ -161,13 +162,14 @@ func findGroup(pos Position) []Position {
     return group
 } 
 
-func addPiece(move Move) {
+func (game *Game) addPiece(move Move) {
 	outMessage := Message{
 		Type:"UPDATE",
 		Payload:Payload{
 			Move: move,
-			Remove: []Position{}
-		}
+			Remove: []Position{},
+		},
+	}
     if !spaceClear(move.Coords) {
 	    return
     }
@@ -189,8 +191,8 @@ func addPiece(move Move) {
 
 }
 
-func sendInitMessage() {
-    for _, p := game.Players {
+func sendInitMessage(game *Game) {
+    for _, p := range game.Players {
         game.Outgoing <- createInitMessage(p)
     }
 }
@@ -198,25 +200,25 @@ func sendInitMessage() {
 func createInitMessage(p *Player) *Message {
         return &Message{
                 Reciever:p.ID,
-                Type:"GAMESTART"
-                Payload:Payload{Player:*p}
+                Type:"GAMESTART",
+                Payload:Payload{Player:*p},
         }
 }
 
-func processMessage(m *Message) {
+func (game *Game) processMessage(m *Message) {
     move := m.Payload.Move
     player := &move.Player
 	if game.Players[player.ID] == nil {
 	    game.Players[player.ID] = player
 	}
-	addPiece(move)
+	game.addPiece(move)
 }
 
-func Run() {
-    sendInitMessage()
+func (game *Game) Run() {
+    sendInitMessage(game)
     for {
-	    message, _ := <-incomingMessages:
-	processMessage(message)
+        message, _ := <-game.IncomingMessages
+	game.processMessage(message)
 	}
 }
 
