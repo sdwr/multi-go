@@ -4,15 +4,15 @@ import (
     . "github.com/sdwr/multi-go/types"
 )
 
-var state State
-var incomingMessages chan *Message
-var outgoingMessages chan *Message
+var game Game
 func InitGame(boardSize int) {
-        state := State{
+        game := Game{
                 Size:boardSize,
                 Board:initBoard(boardSize),
                 Players: make(map[int]Player),
-        }
+    		IncomingMessages: make(chan *Message, 10)
+		OutoingMessages: make(chan *Message, 10)
+	}
 }
 
 func initBoard(size) Board {
@@ -25,19 +25,19 @@ func initBoard(size) Board {
 
 func removePieces(s []Position) {
     for _, pos := s {
-        board[s.X][s.Y] = 0
+        game.Board[s.X][s.Y] = 0
     }
 }
 
 func getSpace(pos Position) int {
-    if pos.X >= 0 && pos.X < state.Size && pos.Y >= 0 && pos.Y < state.Size {
-        return board[pos.X][pos.Y]
+    if pos.X >= 0 && pos.X < game.Size && pos.Y >= 0 && pos.Y < game.Size {
+        return game.Board[pos.X][pos.Y]
     }
     return -1
 }
 
 func spaceClear(pos Position) bool {
-    return board[pos.X][pos.Y] == 0
+    return game.Board[pos.X][pos.Y] == 0
 }
 
 func hash(pos Position) int {
@@ -151,7 +151,7 @@ func addPiece(move Move) {
 	    return
     }
     //add move
-    board[move.Coords.X][move.Coords.Y] == move.Player.ID
+    game.Board[move.Coords.X][move.Coords.Y] == move.Player.ID
     //check surrounding groups
     for _, pos := range getSurrounding(move.Coords) {
 	    if(!groupLives(pos)) {
@@ -163,7 +163,7 @@ func addPiece(move Move) {
         removePieces(outMessage.Remove)
     	outgoingMessages <-move
     } else {
-	    board[move.Coords.X][move.Coords.Y] == 0
+	    game.Board[move.Coords.X][move.Coords.Y] == 0
     }
 
 }
@@ -171,14 +171,10 @@ func addPiece(move Move) {
 func processMessage(m *Message) {
         move := m.Payload.Move
         player := move.Player
-	if state.Players[player.ID] == nil {
-	    state.Players[player.ID] = player
+	if game.Players[player.ID] == nil {
+	    game.Players[player.ID] = player
 	}
 	addPiece(move)
-}
-
-func sendState() {
-    
 }
 
 func Run() {

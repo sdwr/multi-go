@@ -12,7 +12,6 @@ import (
 )
 
 var router *mux.Router
-var room *socket.Room
 func initGlobals() {
 
 }
@@ -47,6 +46,7 @@ func startServer() {
 func main() {
     initGlobals()
     socket.InitRooms()
+    runCoordinator()
     initRouter()
     addRoutes()
     startServer()

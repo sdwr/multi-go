@@ -1,9 +1,11 @@
 package types
 
-type State struct {
+type Game struct {
     Size int
     Board [][]int
     Players map[int]Player
+    IncomingMessages chan *Message
+    OutgoingMessages chan *Message
 }
 
 type Player struct {

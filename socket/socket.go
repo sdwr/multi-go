@@ -59,6 +59,15 @@ func GenerateID() int{
     return lastID
 }
 
+func findClient(id int, clients map[*Client]bool) *Client {
+    for c, _ := range clients {
+	if c.ID == id {
+	    return c
+	}
+    }
+    return nil
+}
+
 //**************************************************
 //ROOM FUNCTIONS
 //**************************************************
@@ -114,8 +123,8 @@ func (r *Room) sendOutgoing(m *Message) {
         log.Println(err)
     return
     }
-    if(m.Reciever != nil) {
-        m.Reciever.send <- encodedMessage
+    if(m.Reciever != 0) {
+        findClient(m.Reciever, r.Clients).send <- encodedMessage
     } else {
         r.sendAll(encodedMessage)
     }
@@ -190,7 +199,7 @@ func (c *Client) readPump() {
         }
         var decodedMessage Message
         json.Unmarshal(message, &decodedMessage)
-        decodedMessage.Sender = c
+        decodedMessage.Sender = c.ID
         c.room.incoming <- &decodedMessage
     }
 }
