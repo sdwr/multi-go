@@ -5,11 +5,11 @@ import (
     "log"
     "net/http"
     "io/ioutil"
-    
+    "os"
+
     "github.com/gorilla/mux"
 
     "github.com/sdwr/multi-go/socket"
-    . "github.com/sdwr/multi-go/types"
 )
 
 var router *mux.Router
@@ -48,7 +48,6 @@ func startServer() {
 func main() {
     initGlobals()
     globalRoom = InitCoordinator()
-    RunCoordinator()
     initRouter()
     addRoutes()
     startServer()

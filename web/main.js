@@ -34,7 +34,7 @@ function sendClickMessage(x, y) {
 function sendFindMatchMessage(isBot) {
 	let findMatchMessage = {}
 	findMatchMessage.Type = "FINDMATCH"
-	findMatchMessage.IsBotMatch = isBot"
+	findMatchMessage.IsBotMatch = isBot
 	sendMessage(findMatchMessage)
 }
 
@@ -55,39 +55,39 @@ const menuQueueTimer = document.getElementById("menu-queue-timer")
 const buttonLeaveQueue = document.getElementById("button-leave-queue")
 
 
-playWithBotsButton.onclick = searchGame(true)
-queueButton.onclick = searchGame(false)
-buttonLeaveQueue.onclick = leaveQueue()
+playWithBotsButton.onclick = function() { return searchGame(true)}
+queueButton.onclick = function() { return searchGame(false)}
+buttonLeaveQueue.onclick = function() { return leaveQueue()}
 
 function openQueue() {
 	queued = true
 	queueStart = Date.now()
 	queueTimer()
-	menuButtons.setAttribute("display", "none")
-	menuQueue.setAttribute("display", "block")
+	menuButtons.style.display = "none"
+	menuQueue.style.display = "block"
 }
 
 async function queueTimer() {
 	while(queued) {
 		menuQueueTimer.textContent = "seconds in queue: " + (Date.now() - queueStart) / 1000
-		await new Promise(r => setTimeout(r, 1000)
+		await new Promise(r => setTimeout(r, 1000))
 	}
 }
 
 function closeQueue() {
 	queued = false
-	menuQueue.setAttribute("display","none")
-	menuButtons.setAttribute("display", "block")
+	menuQueue.style.display = "none"
+	menuButtons.style.display = "block"
 }
 
 function openMenu() {
 	closeQueue()
-	menuElement.setAttribute("display","block")
+	menuElement.style.display = "block"
 }
 
 function closeMenu() {
 	closeQueue()
-	menuElement.setAttribute("display", "none")
+	menuElement.style.display = "none"
 }
 
 function searchGame(isBot) {
@@ -96,7 +96,7 @@ function searchGame(isBot) {
 }
 
 function leaveQueue() {
-	sendCancelMatchMessage()
+	sendCancelMessage()
 	closeQueue()
 }
 

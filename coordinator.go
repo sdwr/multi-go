@@ -14,12 +14,10 @@ var GameHandler chan *Message
 
 func InitCoordinator() *socket.Room {
     initRooms()
+    go run()
     return GlobalRoom
-}	
-
-func RunCoordinator() {
-    run()
 }
+
 
 func initRooms() {
     GlobalRoom = socket.NewRoom()
@@ -66,7 +64,7 @@ func startGame(r *socket.Room) {
    gameRoom := addRoom()
    queueRoom.MoveClients(gameRoom)
    game := NewGame(19, gameRoom)
-   game.Run()
+   go game.Run()
 }
 
 func addRoom() *socket.Room {
