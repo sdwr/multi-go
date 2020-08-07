@@ -7,6 +7,11 @@ let queued = false;
 let queueStart = null;
 
 let player = null;
+let cooldowns = new Map()
+let cooldownElements = new Map()
+
+let lastUpdated = Date.now()
+loopCooldowns()
 
 //SOCKET
 socket.onopen = function(e) {
@@ -19,10 +24,35 @@ socket.onmessage = function(e) {
 		console.log("recieved update", message)
 		updateScores(message.Payload.Players)
 		updateStones(message.Payload)
+		updateCooldowns(message.Payload.Players)
 	} else if(message.Type === "GAMESTART") {
+		console.log("game start", message)
 		player = message.Payload.Player
 		closeMenu()
+		createCDElements(message.Payload.Players)
 	}
+}
+
+function loopCooldowns(){
+	timeCooldowns()
+	setTimeout(loopCooldowns, 100)
+}
+
+function timeCooldowns() {
+	millis = timeElapsed()
+	for (let k of cooldowns.keys()) {
+		let cd = cooldowns.get(k)
+		cd -= millis
+		cooldowns.set(k, cd)
+		let ele = cooldownElements.get(k)
+		updateCDElement(ele, cd)
+	}
+}
+
+function timeElapsed() {
+	let elapsed = Date.now() - lastUpdated
+	lastUpdated = Date.now()
+	return elapsed
 }
 
 //MESSAGES
@@ -108,13 +138,56 @@ function leaveQueue() {
 	closeQueue()
 }
 
+function updateCooldowns(players) {
+    players.forEach(p => {
+	cooldowns.set(p.ID,p.Cooldown)
+	ele = cooldownElements.get(p.ID)
+	updateCDElement(ele, p.Cooldown)
+    })
+}
+
+function createCDElements(players) {
+	players.forEach(p => {
+		cooldownElements.set(p.ID, createCDElement(p))
+	})
+}
+
+function createCDElement(player) {
+	let ele = document.createElement("div")
+	ele.className += " cooldown"
+	let circle = document.createElement("div")
+	circle.className += " cooldownCircle"
+	circle.style.background = player.Color
+	let over = document.createElement("div")
+	over.className += " cooldownOver"
+	ele = ele.appendChild(circle)
+	ele = ele.appendChild(over)
+	ele = updateCDElement(ele, player.Cooldown)
+	return ele;
+}
+
+function updateCDElement(ele, amt) {
+	if(ele && ele.children[1]) {
+		let over = ele.children[1]
+		over.style.height= calcCDOverlayHeight(amt)
+	}
+	return ele
+}
+
+function calcCDOverlayHeight(amt) {
+	return "" + (amt/10000)*100 + "%"
+}
+
 function updateScores(players) {
 	players.sort(sortPlayers)
 	scores.innerHTML = ""
 	players.forEach(p => {
-		let li = document.createElement("li")
+		let li = document.createElement("div")
+		li.className += " score"
 		li.appendChild(getScoreElement(p))
-		li.style.color = p.Color
+		let ele = cooldownElements.get(p.ID)
+		ele = li.appendChild(ele)
+		cooldownElements.set(p.Id, ele)
 		scores.appendChild(li)
 	});
 }

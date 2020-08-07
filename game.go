@@ -1,10 +1,13 @@
 package main
 
 import (
+    "time"
     "github.com/sdwr/multi-go/logger"
     "github.com/sdwr/multi-go/socket"
     . "github.com/sdwr/multi-go/types"
 )
+
+const COOLDOWN = 10000
 
 var colors []string
 var nextColor int
@@ -12,6 +15,7 @@ var nextColor int
 type Game struct {
     Size int
     Board [][]int
+    LastUpdated time.Time
     Players map[int]*Player
     IncomingMessages chan *Message
     OutgoingMessages chan *Message
@@ -22,6 +26,7 @@ func NewGame(boardSize int, r *socket.Room) *Game {
         return &Game{
                 Size:boardSize,
                 Board:initBoard(boardSize),
+		LastUpdated:time.Now(),
 		Players: initPlayers(r.Clients),
     		IncomingMessages: r.Incoming,
 		OutgoingMessages: r.Outgoing,
@@ -33,7 +38,7 @@ func NewPlayer(id int) *Player {
 	ID: id,
 	Name: "",
 	Color: getNextColor(),
-	Cooldown: 10000,
+	Cooldown: 0,
 	Territory: 0,
 	Captures: 0,
     }
@@ -196,6 +201,9 @@ func (game *Game) addPiece(move Move) {
     if !game.spaceClear(move.Coords) {
 	    return
     }
+    if game.Players[move.Player.ID].Cooldown > 0 {
+	    return
+    }
     //add move
     game.Board[move.Coords.X][move.Coords.Y] = move.Player.ID
     //check surrounding groups
@@ -210,7 +218,8 @@ func (game *Game) addPiece(move Move) {
     }
 
     if len(outMessage.Payload.Remove) > 0 || game.groupLives(move.Coords) {
-	game.Players[move.Player.ID].Territory++ 
+	game.Players[move.Player.ID].Territory++
+	game.Players[move.Player.ID].Cooldown = COOLDOWN
         game.removePieces(outMessage.Payload.Remove)
 	outMessage.Payload.Players = playersToSlice(game.Players)
     	game.sendMoveMessage(&outMessage)
@@ -241,6 +250,20 @@ func (game *Game) addTerritory(id int) {
     game.Players[id].Territory += 1
 }
 
+func (game *Game) updateTimers() {
+	currTime := time.Now()
+	elapsed := currTime.Sub(game.LastUpdated)
+	elapsedMillis := elapsed.Milliseconds()
+	for _, p := range game.Players {
+	    if(p.Cooldown > 0) {
+		p.Cooldown -= int(elapsedMillis)
+	    }
+	}
+
+	game.LastUpdated = currTime
+}
+
+
 //message without reciever goes to all clients
 func (game *Game) sendMoveMessage(m *Message) {
     game.OutgoingMessages <- m
@@ -248,19 +271,20 @@ func (game *Game) sendMoveMessage(m *Message) {
 
 func (game *Game) sendInitMessage() {
     for _, p := range game.Players {
-        game.OutgoingMessages <- createInitMessage(p)
+        game.OutgoingMessages <- game.createInitMessage(p)
     }
 }
 
-func createInitMessage(p *Player) *Message {
+func (game *Game) createInitMessage(p *Player) *Message {
         return &Message{
                 Reciever:p.ID,
                 Type:"GAMESTART",
-                Payload:Payload{Player:*p},
+		Payload:Payload{Player:*p,Players:playersToSlice(game.Players)},
         }
 }
 
 func (game *Game) processMessage(m *Message) {
+    game.updateTimers()
     move := m.Payload.Move
     player := &move.Player
 	if game.Players[player.ID] == nil {
