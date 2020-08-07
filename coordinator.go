@@ -3,6 +3,7 @@ package main
 import (
     "log"
 
+    "github.com/sdwr/multi-go/logger"
     "github.com/sdwr/multi-go/socket"
     . "github.com/sdwr/multi-go/types"
 )
@@ -21,7 +22,9 @@ func InitCoordinator() *socket.Room {
 
 func initRooms() {
     GlobalRoom = socket.NewRoom()
+    go GlobalRoom.Run()
     queueRoom = socket.NewRoom()
+    go queueRoom.Run()
     gameRooms = make(map[int]*socket.Room)
     GameHandler = make(chan *Message, 10)
 }
@@ -42,7 +45,9 @@ func run() {
 func handleGlobalMessage(m *Message) {
     if(m.Type == "QUEUE") {
         GlobalRoom.FindClient(m.Sender).ChangeRoom(queueRoom)
-        if len(queueRoom.Clients) >= 8 {
+	logger.Log(3, "moving client", m.Sender, " to queue")
+	logger.Log(3, *queueRoom)
+	if len(queueRoom.Clients) >= 4 {
             startGame(queueRoom)
         }
     }
@@ -61,9 +66,13 @@ func handleGameMessage(m *Message) {
 }
 
 func startGame(r *socket.Room) {
-   gameRoom := addRoom()
-   queueRoom.MoveClients(gameRoom)
-   game := NewGame(19, gameRoom)
+    room := r
+    queueRoom = socket.NewRoom()
+    go queueRoom.Run()
+   gameRooms[r.ID] = r
+   logger.Log(3, "starting game in room", *room)
+   logger.Log(3, "with clients", room.Clients)
+   game := NewGame(19, room)
    go game.Run()
 }
 

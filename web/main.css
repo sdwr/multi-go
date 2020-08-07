@@ -1,3 +1,16 @@
+#container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#score-container {
+    padding-left: 20px;
+    height: 100%;
+    width: 200px;
+    font-size: 20px;
+}
+
 #menu {
     position: fixed;
     display: block;

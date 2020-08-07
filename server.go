@@ -6,9 +6,11 @@ import (
     "net/http"
     "io/ioutil"
     "os"
+    "strconv"
 
     "github.com/gorilla/mux"
 
+    "github.com/sdwr/multi-go/logger"
     "github.com/sdwr/multi-go/socket"
 )
 
@@ -44,8 +46,15 @@ func startServer() {
     log.Fatal(http.ListenAndServe(":4404", router))
 }
 
+func setLogLevel() {
+    args := os.Args[1:]
+    level, _ := strconv.Atoi(args[0])
+    logger.InitLogger(level)
+}
+
 
 func main() {
+    setLogLevel()
     initGlobals()
     globalRoom = InitCoordinator()
     initRouter()

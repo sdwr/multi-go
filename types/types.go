@@ -5,6 +5,8 @@ type Player struct {
     Name string
     Color string
     Cooldown int
+    Territory int
+    Captures int
 }
 
 type Message struct {
@@ -18,6 +20,7 @@ type Payload struct {
     Player Player
     Move Move
     Remove []Position
+    Players []Player
 }
 
 type Move struct {

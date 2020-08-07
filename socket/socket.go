@@ -9,6 +9,7 @@ import (
 
     "github.com/gorilla/websocket"
 
+    "github.com/sdwr/multi-go/logger"
     . "github.com/sdwr/multi-go/types"
 )
 
@@ -114,6 +115,8 @@ func (r *Room) FakeIncomingMessage(m *Message) {
 }
 
 func (r *Room) sendOutgoing(m *Message) {
+    logger.Log(4, "sending outgoing")
+    logger.Log(4, m)
     encodedMessage, err := json.Marshal(m)
     if(err != nil) {
         log.Println(err)
@@ -161,11 +164,14 @@ func (r *Room) FindClient(id int) *Client {
 
 //Client moving functions
 func (r *Room) registerClient(c *Client) {
+    logger.Log(4, "registerClient ", c, " in room ", r)
+    c.room = r
     r.Clients[c.ID] = c
     r.registerCallback(c)
 }
 
 func (r *Room) unregisterClient(c *Client) {
+    logger.Log(4, "unregisterClient ", c, " in room ", r)
     delete(r.Clients, c.ID)
     r.unregisterCallback(c)
 }
@@ -175,9 +181,10 @@ func (r *Room) UnregisterAll() {
         r.unregisterClient(c)
     }
 }
-
+//NOT THREAD SAFE
 func (r *Room) MoveClients(newR *Room) {
-    for _, c := range r.Clients {
+	clients := r.Clients
+    for _, c := range clients {
 	c.ChangeRoom(newR)
     }
 }
@@ -208,6 +215,8 @@ func (c *Client) readPump() {
         var decodedMessage Message
         json.Unmarshal(message, &decodedMessage)
         decodedMessage.Sender = c.ID
+	logger.Log(3, "recieving message from client", c)
+	logger.Log(3, decodedMessage)
         c.room.Incoming <- &decodedMessage
     }
 }
@@ -239,9 +248,10 @@ func (c *Client) writePump() {
 }
 
 func (c *Client) ChangeRoom(r *Room) {
+    client := c
+    logger.Log(4, "changing client", client, " to room ", r)
     c.room.unregister <- c
-    c.room = r
-    r.register <- c
+    r.register <- client
 }
 
 func ServeWs(room *Room, w http.ResponseWriter, r *http.Request) {
@@ -257,6 +267,7 @@ func ServeWs(room *Room, w http.ResponseWriter, r *http.Request) {
 		      ID: GenerateID(),
 	      }
     client.room.register <- client
+    logger.Log(3, "registered client", client)
 
     go client.writePump()
     go client.readPump()

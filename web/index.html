@@ -9,17 +9,13 @@
 	<link rel="stylesheet" type="text/css" href="/web/main.css"/>
 </head>
 <body>
-	<select id="tool" style="display:block; margin-bottom:10px;">
-
-      <option value="black" selected>Black stone</option>
-      <option value="white">White stone</option>
-      <option value="0">a</option>
-      <option value="1">b</option>
-      <option value="2">Circle</option>
-      <option value="remove">Remove</option>
-	</select>
-
-	<div id="board"></div>
+	<div id="container">
+		<div id="board"></div>
+		<div id="score-container">
+			<h3>Player Scores</h3>
+			<ul id="scores"></ul>
+		</div>
+	</div>
 	<div id="menu">
 		<h2 id="menu-title">Multi Go</h2>
 		<div id="menu-buttons">

@@ -6,6 +6,8 @@ const socket = new WebSocket("ws://"+SERVER_URL+"/socket");
 let queued = false;
 let queueStart = null;
 
+let player = null;
+
 //SOCKET
 socket.onopen = function(e) {
 	console.log("socket connection open")
@@ -14,8 +16,11 @@ socket.onopen = function(e) {
 socket.onmessage = function(e) {
 	let message = JSON.parse(e.data);
 	if(message.Type === "UPDATE") {
+		console.log("recieved update", message)
+		updateScores(message.Payload.Players)
 		updateStones(message.Payload)
-	} else if(message.Type === "FOUNDMATCH") {
+	} else if(message.Type === "GAMESTART") {
+		player = message.Payload.Player
 		closeMenu()
 	}
 }
@@ -28,12 +33,14 @@ function sendMessage(message) {
 function sendClickMessage(x, y) {
 	let clickMessage = {}
 	clickMessage.Type = "CLICK"
+	clickMessage.Payload = {Move:{Coords:{X:x,Y:y}, Player:player}}
+	console.log("sent click", clickMessage)
 	sendMessage(clickMessage)
 }
 
 function sendFindMatchMessage(isBot) {
 	let findMatchMessage = {}
-	findMatchMessage.Type = "FINDMATCH"
+	findMatchMessage.Type = "QUEUE"
 	findMatchMessage.IsBotMatch = isBot
 	sendMessage(findMatchMessage)
 }
@@ -54,6 +61,7 @@ const menuQueue = document.getElementById("menu-queue")
 const menuQueueTimer = document.getElementById("menu-queue-timer")
 const buttonLeaveQueue = document.getElementById("button-leave-queue")
 
+const scores = document.getElementById("scores")
 
 playWithBotsButton.onclick = function() { return searchGame(true)}
 queueButton.onclick = function() { return searchGame(false)}
@@ -100,9 +108,31 @@ function leaveQueue() {
 	closeQueue()
 }
 
+function updateScores(players) {
+	players.sort(sortPlayers)
+	scores.innerHTML = ""
+	players.forEach(p => {
+		let li = document.createElement("li")
+		li.appendChild(getScoreElement(p))
+		li.style.color = p.Color
+		scores.appendChild(li)
+	});
+}
+
+function sortPlayers(p1, p2) {
+	let p1Score = p1.Territory + p1.Captures
+	let p2Score = p2.Territory + p2.Captures
+	return p2Score - p1Score
+}
+
+function getScoreElement(player) {
+	ele = document.createTextNode(player.Name + ": " + player.Territory + " + " + player.Captures)
+	return ele
+}
+
+
 
 let boardElement = document.getElementById("board")
-let toolElement = document.getElementById("tool")
 let board = new WGo.Board(boardElement, {width:600})
 
 //BOARD API LETS GOOOO
