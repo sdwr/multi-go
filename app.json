@@ -1,4 +1,8 @@
 {
     "name": "Multi-Go",
-    "image": "heroku/go"
+    "buildpacks": [
+    {
+	"url": "heroku/go"
+    }
+    ]
 }
