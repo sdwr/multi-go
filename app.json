@@ -1,0 +1,4 @@
+{
+    "name": "Multi-Go",
+    "image": "heroku/go"
+}
