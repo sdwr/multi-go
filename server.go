@@ -58,7 +58,7 @@ func setLogLevel() {
     if len(args) > 0 {
 	level, _ = strconv.Atoi(args[0])
     } else {
-	level = 2
+	level = 3
     }
     logger.InitLogger(level)
 }
