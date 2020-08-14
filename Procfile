@@ -1,1 +1,1 @@
-web: ./multi-go
+web: ./bin/multi-go
