@@ -1,1 +1,1 @@
-go build game.go coordinator.go server.go
+go build -o bin/multi-go 

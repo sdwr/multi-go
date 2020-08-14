@@ -1,1 +1,1 @@
-web: ./game 3
+web: ./multi-go
