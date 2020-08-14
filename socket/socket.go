@@ -205,10 +205,12 @@ func (r *Room) MoveClients(newR *Room) {
 }
 
 func initGlobals() {
-    lastID = 0
-    randomSource = rand.New(rand.NewSource(99))
-    upgrader = websocket.Upgrader{}
-    upgrader.CheckOrigin = func(r *http.Request) bool {return true}
+    if(lastID == 0){
+        lastID = 1
+        randomSource = rand.New(rand.NewSource(99))
+        upgrader = websocket.Upgrader{}
+        upgrader.CheckOrigin = func(r *http.Request) bool {return true}
+    }
 }
 
 //**************************************************

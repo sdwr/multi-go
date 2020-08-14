@@ -72,6 +72,7 @@ const menuButtons = document.getElementById("menu-buttons")
 const playWithBotsButton = document.getElementById("button-play-bots")
 const queueButton = document.getElementById("button-queue")
 
+const menuName = document.getElementById("input-name")
 const menuQueue = document.getElementById("menu-queue")
 const menuQueueTimer = document.getElementById("menu-queue-timer")
 const buttonLeaveQueue = document.getElementById("button-leave-queue")
