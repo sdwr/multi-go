@@ -1,5 +1,5 @@
 
-const SERVER_URL = "localhost:4404"
+const SERVER_URL = window.location.href
 const socket = new WebSocket("ws://"+SERVER_URL+"/socket");
 
 //GLOBALS
