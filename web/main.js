@@ -1,6 +1,7 @@
 
-const SERVER_URL = window.location.href
-const socket = new WebSocket("wss://"+SERVER_URL+"/socket");
+let SERVER_URL = window.location.href
+SERVER_URL.replace("^https\/\/$", "")
+const socket = new WebSocket("wss://"+SERVER_URL+"socket");
 
 //GLOBALS
 let queued = false;
