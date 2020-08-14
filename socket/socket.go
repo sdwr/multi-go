@@ -167,6 +167,7 @@ func (r *Room) registerClient(c *Client) {
     logger.Log(4, "registerClient ", c, " in room ", r)
     c.room = r
     r.Clients[c.ID] = c
+    sendInitMessage(r, c)
     r.registerCallback(c)
 }
 
@@ -181,6 +182,20 @@ func (r *Room) UnregisterAll() {
         r.unregisterClient(c)
     }
 }
+
+func sendInitMessage(r *Room, c *Client) {
+    m := createInitMessage(r, c)
+    r.sendOutgoing(m)
+}
+
+func createInitMessage(r *Room, c *Client) *Message {
+    m := Message{}
+    m.Type = "INIT"
+    m.Sender = c.ID
+    return &m
+}
+
+
 //NOT THREAD SAFE
 func (r *Room) MoveClients(newR *Room) {
 	clients := r.Clients

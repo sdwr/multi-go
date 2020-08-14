@@ -21,7 +21,9 @@ socket.onopen = function(e) {
 
 socket.onmessage = function(e) {
 	let message = JSON.parse(e.data);
-	if(message.Type === "UPDATE") {
+        if(message.Type === "INIT") {
+	        console.log("init", message)
+        } else if(message.Type === "UPDATE") {
 		console.log("recieved update", message)
 		updateScores(message.Payload.Players)
 		updateStones(message.Payload)
