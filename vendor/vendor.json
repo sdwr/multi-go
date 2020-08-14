@@ -1,6 +1,7 @@
 {
 	"heroku": {
 		"goVersion": "go1.13"
+		"install": ["./..."]
 	},
 	"rootPath": "github.com/sdwr/multi-go"
 
