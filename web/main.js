@@ -1,6 +1,6 @@
 
 let SERVER_URL = window.location.href
-SERVER_URL = SERVER_URL.replace("^https\/\/", "")
+SERVER_URL = SERVER_URL.replace("^https:\/\/", "")
 const socket = new WebSocket("wss://"+SERVER_URL+"socket");
 
 //GLOBALS
