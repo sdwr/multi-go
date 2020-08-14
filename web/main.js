@@ -1,18 +1,18 @@
 
 let SERVER_URL = window.location.href
 SERVER_URL = SERVER_URL.replace(/^https:\/\//, "")
-const socket = new WebSocket("wss://"+SERVER_URL+"socket");
-
+SERVER_URL = SERVER_URL.replace(/^http:\/\//, "")
+let socket = "";
+if(SERVER_URL.startsWith("localhost")) {
+	socket = new WebSocket("ws://"+SERVER_URL+"socket");
+} else {
+	socket = new WebSocket("wss://"+SERVER_URL+"socket");
+}
 //GLOBALS
 let queued = false;
 let queueStart = null;
 
-let player = null;
-let cooldowns = new Map()
-let cooldownElements = new Map()
-
-let lastUpdated = Date.now()
-loopCooldowns()
+let player = null
 
 //SOCKET
 socket.onopen = function(e) {
@@ -27,28 +27,10 @@ socket.onmessage = function(e) {
 		console.log("recieved update", message)
 		updateScores(message.Payload.Players)
 		updateStones(message.Payload)
-		updateCooldowns(message.Payload.Players)
 	} else if(message.Type === "GAMESTART") {
 		console.log("game start", message)
 		player = message.Payload.Player
 		closeMenu()
-		createCDElements(message.Payload.Players)
-	}
-}
-
-function loopCooldowns(){
-	timeCooldowns()
-	setTimeout(loopCooldowns, 100)
-}
-
-function timeCooldowns() {
-	millis = timeElapsed()
-	for (let k of cooldowns.keys()) {
-		let cd = cooldowns.get(k)
-		cd -= millis
-		cooldowns.set(k, cd)
-		let ele = cooldownElements.get(k)
-		updateCDElement(ele, cd)
 	}
 }
 
@@ -94,6 +76,7 @@ const menuQueue = document.getElementById("menu-queue")
 const menuQueueTimer = document.getElementById("menu-queue-timer")
 const buttonLeaveQueue = document.getElementById("button-leave-queue")
 
+const cooldownElement = document.getElementById("cooldown")
 const scores = document.getElementById("scores")
 
 playWithBotsButton.onclick = function() { return searchGame(true)}
@@ -110,8 +93,18 @@ function openQueue() {
 
 async function queueTimer() {
 	while(queued) {
-		menuQueueTimer.textContent = "seconds in queue: " + (Date.now() - queueStart) / 1000
+		menuQueueTimer.textContent = "seconds in queue: " + Math.floor((Date.now() - queueStart) / 1000)
 		await new Promise(r => setTimeout(r, 1000))
+	}
+}
+
+async function cooldownTimer() {
+	while(true) {
+		if(player && player.Cooldown > 0) {
+			await new Promise(r => setTimeout(r, 100))
+			player.Cooldown -= 100
+		        updateCDElement(cooldownElement.children[0], player.Cooldown)	
+		}
 	}
 }
 
@@ -139,20 +132,6 @@ function searchGame(isBot) {
 function leaveQueue() {
 	sendCancelMessage()
 	closeQueue()
-}
-
-function updateCooldowns(players) {
-    players.forEach(p => {
-	cooldowns.set(p.ID,p.Cooldown)
-	ele = cooldownElements.get(p.ID)
-	updateCDElement(ele, p.Cooldown)
-    })
-}
-
-function createCDElements(players) {
-	players.forEach(p => {
-		cooldownElements.set(p.ID, createCDElement(p))
-	})
 }
 
 function createCDElement(player) {
@@ -188,9 +167,6 @@ function updateScores(players) {
 		let li = document.createElement("div")
 		li.className += " score"
 		li.appendChild(getScoreElement(p))
-		let ele = cooldownElements.get(p.ID)
-		ele = li.appendChild(ele)
-		cooldownElements.set(p.Id, ele)
 		scores.appendChild(li)
 	});
 }

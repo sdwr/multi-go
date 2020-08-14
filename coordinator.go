@@ -2,6 +2,7 @@ package main
 
 import (
     "log"
+    "time"
 
     "github.com/sdwr/multi-go/logger"
     "github.com/sdwr/multi-go/socket"
@@ -23,10 +24,14 @@ func InitCoordinator() *socket.Room {
 func initRooms() {
     GlobalRoom = socket.NewRoom()
     go GlobalRoom.Run()
-    queueRoom = socket.NewRoom()
-    go queueRoom.Run()
+    initQueueRoom()
     gameRooms = make(map[int]*socket.Room)
     GameHandler = make(chan *Message, 10)
+}
+
+func initQueueRoom() {
+    queueRoom = socket.NewRoom()
+    go queueRoom.Run()
 }
 
 func run() {
@@ -48,7 +53,7 @@ func handleGlobalMessage(m *Message) {
 	logger.Log(3, "moving client", m.Sender, " to queue")
 	logger.Log(3, *queueRoom)
 	if len(queueRoom.Clients) >= 4 {
-            startGame(queueRoom)
+           go startGame(queueRoom)
         }
     }
 }
@@ -66,10 +71,10 @@ func handleGameMessage(m *Message) {
 }
 
 func startGame(r *socket.Room) {
-    room := r
-    queueRoom = socket.NewRoom()
-    go queueRoom.Run()
+   room := r
+   initQueueRoom()
    gameRooms[r.ID] = r
+   time.Sleep(2000)
    logger.Log(3, "starting game in room", *room)
    logger.Log(3, "with clients", room.Clients)
    game := NewGame(19, room)

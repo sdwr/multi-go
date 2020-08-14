@@ -282,7 +282,7 @@ func ServeWs(room *Room, w http.ResponseWriter, r *http.Request) {
 		      ID: GenerateID(),
 	      }
     client.room.register <- client
-    logger.Log(3, "registered client", client)
+    logger.Log(3, "registered client", *client)
 
     go client.writePump()
     go client.readPump()

@@ -1,0 +1,12 @@
+DEBUG SOCKET ROOMS
+issues:
+	reconnect doesn't work
+	game doesnt start until 5/6 players join, isntead of 4
+	one player doesnt get into game a lot of the time
+	after game starts, ids start from 2 again
+
+TODO
+show cooldown timer on client
+game never ends
+first click in game doesn't register
+
