@@ -42,8 +42,14 @@ func addRoutes() {
 }
 
 func startServer() {
-    log.Println("running server on port 4404")
-    log.Fatal(http.ListenAndServe(":4404", router))
+    port := os.Getenv("PORT")
+    if port == "" {
+        log.Println("running server on port 4404")
+        log.Fatal(http.ListenAndServe(":4404", router))
+    } else {
+	log.Println("running server on port ", port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
+    }
 }
 
 func setLogLevel() {
