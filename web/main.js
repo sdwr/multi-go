@@ -31,6 +31,8 @@ socket.onmessage = function(e) {
 		console.log("game start", message)
 		player = message.Payload.Player
 		closeMenu()
+	} else if(message.Type === "QUEUEUPDATE") {
+		updateQueue(message.Payload.Queued)
 	}
 }
 
@@ -62,7 +64,7 @@ function sendFindMatchMessage(isBot) {
 
 function sendCancelMessage() {
 	let cancelMessage = {}
-	cancelMessage.Type = "CANCELMATCH"
+	cancelMessage.Type = "LEAVEQUEUE"
 	sendMessage(cancelMessage)
 }
 
@@ -71,6 +73,7 @@ const menuElement = document.getElementById("menu")
 const menuButtons = document.getElementById("menu-buttons")
 const playWithBotsButton = document.getElementById("button-play-bots")
 const queueButton = document.getElementById("button-queue")
+const queuePlayers = document.getElementById("menu-queue-players")
 
 const menuName = document.getElementById("input-name")
 const menuQueue = document.getElementById("menu-queue")
@@ -182,6 +185,10 @@ function sortPlayers(p1, p2) {
 function getScoreElement(player) {
 	ele = document.createTextNode(player.Name + ": " + player.Territory + " + " + player.Captures)
 	return ele
+}
+
+function updateQueue(num) {
+	queuePlayers.innerHTML = "" + num + "/5 players"
 }
 
 

@@ -17,6 +17,11 @@ import (
 // Room.Clients is modified on register/unregister
 // all room channels are read in Room.Run()
 
+const (
+	writeWait = 10 * time.Second
+	pongWait = 60 * time.Second
+	pingPeriod = (pongWait * 9) / 10
+)
 
 type Room struct {
     ID int
@@ -223,6 +228,8 @@ func (c *Client) readPump() {
         c.connection.Close()
     }()
     //add ping tests
+    c.connection.SetReadDeadline(time.Now().Add(pongWait))
+    c.connection.SetPongHandler(func(string) error { c.connection.SetReadDeadline(time.Now().Add(pongWait)); return nil })
     for {
         _, message, err := c.connection.ReadMessage()
         if err != nil {
@@ -240,13 +247,16 @@ func (c *Client) readPump() {
 
 
 func (c *Client) writePump() {
+    ticker := time.NewTicker(pingPeriod)
     defer func() {
+	ticker.Stop()
         c.connection.Close()
     }()
     for {
         select {
         case message, ok := <-c.send:
-            if !ok {
+ 		c.connection.SetWriteDeadline(time.Now().Add(writeWait))
+		if !ok {
                 c.connection.WriteMessage(websocket.CloseMessage, []byte{})
                 return
 
@@ -260,15 +270,21 @@ func (c *Client) writePump() {
             if err := w.Close(); err != nil {
                 return
             }
+	case <- ticker.C:
+		c.connection.SetWriteDeadline(time.Now().Add(writeWait))
+		if err := c.connection.WriteMessage(websocket.PingMessage, nil); err != nil {
+			return
+		}
         }
     }
 }
 
-func (c *Client) ChangeRoom(r *Room) {
+func (c *Client) ChangeRoom(r *Room) *Client {
     client := c
     logger.Log(4, "changing client", client, " to room ", r)
     c.room.unregister <- c
     r.register <- client
+    return c
 }
 
 func ServeWs(room *Room, w http.ResponseWriter, r *http.Request) {

@@ -21,6 +21,7 @@ type Payload struct {
     Move Move
     Remove []Position
     Players []Player
+    Queued int
 }
 
 type Move struct {

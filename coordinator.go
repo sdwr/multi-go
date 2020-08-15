@@ -50,6 +50,7 @@ func run() {
 func handleGlobalMessage(m *Message) {
     if(m.Type == "QUEUE") {
         GlobalRoom.FindClient(m.Sender).ChangeRoom(queueRoom)
+	sendQueueUpdateMessage(queueRoom)
 	logger.Log(3, "moving client", m.Sender, " to queue")
 	logger.Log(3, *queueRoom)
 	if len(queueRoom.Clients) >= 4 {
@@ -59,14 +60,26 @@ func handleGlobalMessage(m *Message) {
 }
 
 func handleQueueMessage(m *Message) {
-    log.Println(m)
+    if(m.Type == "LEAVEQUEUE") {
+	queueRoom.FindClient(m.Sender).ChangeRoom(GlobalRoom)
+	sendQueueUpdateMessage(queueRoom)
+	logger.Log(3, "moving client", m.Sender, " out of queue")
+    }
+	log.Println(m)
+}
+
+func sendQueueUpdateMessage(r *socket.Room) {
+	m := Message{}
+	m.Type = "QUEUEUPDATE"
+	m.Payload.Queued = len(r.Clients)
+	r.Outgoing <- &m
 }
 
 func handleGameMessage(m *Message) {
     if(m.Type == "DONE") {
         gameRoom := gameRooms[m.Sender]
         gameRoom.MoveClients(GlobalRoom)
-	delete(gameRooms, gameRoom.ID)	    
+	delete(gameRooms, gameRoom.ID)
     }
 }
 
