@@ -167,6 +167,7 @@ function updateScores(players) {
 	players.forEach(p => {
 		let li = document.createElement("div")
 		li.className += " score"
+		li.style.color = p.Color
 		li.appendChild(getScoreElement(p))
 		scores.appendChild(li)
 	});

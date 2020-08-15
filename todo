@@ -5,7 +5,10 @@ issues:
 	one player doesnt get into game a lot of the time
 
 TODO
+can get into a game without menu going away
 show cooldown timer on client
 game never ends
 first click in game doesn't register
 add name to game
+show #players in queue
+
