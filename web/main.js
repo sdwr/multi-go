@@ -9,6 +9,9 @@ if(SERVER_URL.startsWith("localhost")) {
 	socket = new WebSocket("wss://"+SERVER_URL+"socket");
 }
 //GLOBALS
+//note: some div ids are hardcoded in here
+//scores, cooldown, others??
+//do not change on html file
 let queued = false;
 let queueStart = null;
 
@@ -138,30 +141,18 @@ function leaveQueue() {
 	closeQueue()
 }
 
-function createCDElement(player) {
-	let ele = document.createElement("div")
-	ele.className += " cooldown"
-	let circle = document.createElement("div")
-	circle.className += " cooldownCircle"
-	circle.style.background = player.Color
-	let over = document.createElement("div")
-	over.className += " cooldownOver"
-	ele = ele.appendChild(circle)
-	ele = ele.appendChild(over)
-	ele = updateCDElement(ele, player.Cooldown)
-	return ele;
-}
-
-function updateCDElement(ele, amt) {
-	if(ele && ele.children[1]) {
-		let over = ele.children[1]
-		over.style.height= calcCDOverlayHeight(amt)
+//safety to make sure it doesn't loop forever
+function updateCDElement(amt, iter = 0) {
+	let circle = document.getElementById("cooldownCircle")
+	let over = document.getElementById("cooldownOver")
+	over.style.height= calcCDOverlayHeight(amt)
+	if(amt > 0 && iter < 10) {
+		setTimeout(() => updateCDElement(amt-1, iter+1), 1000)
 	}
-	return ele
 }
 
 function calcCDOverlayHeight(amt) {
-	return "" + (amt/10000)*100 + "%"
+	return "" + ((amt*1.0) / 5) * 100 + "%"
 }
 
 function updateScores(players) {
@@ -199,8 +190,12 @@ let board = new WGo.Board(boardElement, {width:600})
 //BOARD API LETS GOOOO
 let players = ["#bbbbbb", "#abcabc", "#defdef"]
 
+//player cd hardcoded here
 function updateStones(payload) {
 	addStone(payload.Move.Coords.X, payload.Move.Coords.Y, payload.Move.Player.Color)
+	if(player && player.ID && payload.Move.Player.ID === player.ID) {
+		updateCDElement(5)
+	}
 	payload.Remove.forEach(pos => {
 		removeStone(pos.X,pos.Y)
 	})

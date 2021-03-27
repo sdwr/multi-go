@@ -1,3 +1,4 @@
+add/save logs on heroku
 DEBUG SOCKET ROOMS
 issues:
 	reconnect doesn't work
@@ -7,8 +8,19 @@ issues:
 TODO
 can get into a game without menu going away
 show cooldown timer on client
+	-dont want endless updates or client slowdown
+	-ideally update 1/second for 5 seconds after self places piece
+	-has to check on successful place, not client action request
+	-
 game never ends
 first click in game doesn't register
 add name to game
 show #players in queue
+
+cleanup:
+types - make object on client
+	  - clean up on server
+	  	- various locations
+		- kinda gross
+
 
